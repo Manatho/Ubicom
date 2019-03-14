@@ -4,8 +4,7 @@ const app = dialogflow({ debug: true });
 
 app.intent("Book", (conv, { Room_Number }) => {
 		conv.ask(
-            'you said' + Room_Number
-				
+            'you said ' + Room_Number +'. What period would you like to book?'
 		);
 });
 
