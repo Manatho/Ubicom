@@ -27,5 +27,17 @@ app.intent("BookTime", (conv, data) => {
     }
 });
 
+app.intent("Attendees", (conv, data) => {
+    conv.data.attendees = data.fullName
+    let response = "You said "
+    data.fullName.forEach((v) => {response += v["given-name"] + " " + v["last-name"] + ", "});
+
+    if(conv.data.room == null) {
+        conv.ask(response + "Which room would you like to book?")
+    } else {
+        conv.ask(response + "Which room would you like to book?")
+    }
+})
+
 // Set the DialogflowApp object to handle the HTTPS POST request.
 exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
