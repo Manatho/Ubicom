@@ -3,66 +3,6 @@ const functions = require("firebase-functions");
 const app = dialogflow({ debug: true });
 const dateformat = require("dateformat");
 
-// app.intent("Book", (conv, { Room_Number }) => {
-//     conv.data.room = Room_Number;
-//     if(conv.data.date != null){
-//         conv.ask(response + "Who would you like to book with?")
-//     } else {
-//         conv.ask("you said " + Room_Number + ". What period would you like to book?");
-//     }
-// });
-
-// app.intent("BookTime", (conv, data) => {
-//     conv.data.date = data.date;
-//     conv.data.timeperiod = data['time-period'];
-//     let date =  new Date(data.date);
-//     let start = new Date(data['time-period'].startTime)
-//     let end = new Date(data['time-period'].endTime)
-    
-//     let response = `you said ${dateformat(date, "dd/mm")} from ${dateformat(start, "HH:MM")} to ${dateformat(end, "HH:MM")}. `;
-//     if(conv.data.room != null){
-//         conv.ask(response + "Who would you like to book with?")
-//     } else {
-//         conv.ask(response + "Which room would you like to book?")
-//     }
-// });
-
-// app.intent("Attendees", (conv, data) => {
-//     conv.data.attendees = data.fullName
-//     let response = "You said "
-//     data.fullName.forEach((v) => {response += v["given-name"] + " " + v["last-name"] + ", "});
-
-//     if(conv.data.room == null) {
-//         conv.ask(response + "Which room would you like to book?")
-//     } else if(conv.data.date == null) {
-//         conv.ask(response + "What period would you like to book?")
-//     } else {
-//         let date =  new Date(conv.data.date);
-//         let start = new Date(conv.data.timeperiod.startTime)
-//         let end = new Date(conv.data.timeperiod.endTime)
-//         conv.ask(`Booking the following: ${conv.data.room}, ${dateformat(date, "dd/mm")} from ${dateformat(start, "HH:MM")} to ${dateformat(end, "HH:MM")}. Together with ${conv.data.attendees} is this right?`)
-//     }
-// })
-
-// app.intent("Attendees followup", (conv, data) => {
-    
-//     conv.close("Holst er en nar, ja, jo, Jonas er en cunt. Mathies er en retard");
-//     // conv.data.attendees = data.fullName
-//     // let response = "You said "
-//     // data.fullName.forEach((v) => {response += v["given-name"] + " " + v["last-name"] + ", "});
-
-//     // if(conv.data.room == null) {
-//     //     conv.ask(response + "Which room would you like to book?")
-//     // } else if(conv.data.date == null) {
-//     //     conv.ask(response + "What period would you like to book?")
-//     // } else {
-//     //     let date =  new Date(conv.data.date);
-//     //     let start = new Date(conv.data.timeperiod.startTime)
-//     //     let end = new Date(conv.data.timeperiod.endTime)
-//     //     conv.ask(`Booking the following: ${conv.data.room}, ${dateformat(date, "dd/mm")} from ${dateformat(start, "HH:MM")} to ${dateformat(end, "HH:MM")}. Together with ${conv.data.attendees} is this right?`)
-//     // }
-// })
-
 app.intent("roomBooking", (conv, data) => {
     let date =  new Date(data.date);
     let start = new Date(data.timePeriod.startTime);
@@ -77,8 +17,8 @@ app.intent("roomBooking", (conv, data) => {
         names: data.fullName,
         room: data.roomNumber
     }
-
-    conv.ask(`Booking the following: ${data.roomNumber}, ${dateformat(date, "dd/mm")} from ${dateformat(start, "HH:MM")} to ${dateformat(end, "HH:MM")}. Together with ${names} is this right?`);
+    
+    conv.ask(`Ok, I have booked room ${data.roomNumber}, the ${dateformat(date, "dd/mmm")} from ${dateformat(start, "HH:MM")} to ${dateformat(end, "HH:MM")} together with ${names} is this right?`);
 
 });
 
@@ -88,7 +28,7 @@ app.intent("roomBooking - yes", (conv, data) => {
 });
 
 app.intent("roomBooking - no", (conv, data) => {
-   // conv.close(`${JSON.stringify(data) + "..........." + JSON.stringify(conv.data.everything)}`)
+    
     if(data.date != ""){
         conv.data.everything.date = data.date;
     }
@@ -98,8 +38,18 @@ app.intent("roomBooking - no", (conv, data) => {
         conv.data.everything.start = start;
         conv.data.everything.end = end;
     }
-    if(data.fullName != []){
+    if(data.fullName.length > 0){
         conv.data.everything.names =  data.fullName;
+    }
+    if(data.edits.length > 0){
+        data.edits.forEach(edit => {
+            let names = edit["full-name"];
+            if(edit.operator.toLowerCase() == "remove"){
+                conv.data.everything.names.filter(y => !x.includes(y));
+            } else if(edits.operator.toLowerCase() == "add"){
+                conv.data.everything.names.push(...x);
+            }
+        })
     }
     if (data.roomNumber != ""){
         conv.data.everything.room = data.roomNumber;
@@ -108,7 +58,12 @@ app.intent("roomBooking - no", (conv, data) => {
     let names = ""
     conv.data.everything.names.forEach((v) => {names += v["given-name"] + " " + v["last-name"] + ", "});
 
-    conv.ask(`Booking the following: ${conv.data.everything.room}, ${dateformat(conv.data.everything.date, "dd/mm")} from ${dateformat(conv.data.everything.start, "HH:MM")} to ${dateformat(conv.data.everything.end, "HH:MM")}. Together with ${names} is this right?`);
+    if(conv.data.everything.names.length > 0){
+        conv.ask(`Updated it to the following: ${conv.data.everything.room}, ${dateformat(conv.data.everything.date, "dd/mmm")} from ${dateformat(conv.data.everything.start, "HH:MM")} to ${dateformat(conv.data.everything.end, "HH:MM")}. Together with ${names} is this right?`);
+    } else {
+        conv.ask(`Updated it to the following: ${conv.data.everything.room}, ${dateformat(conv.data.everything.date, "dd/mmm")} from ${dateformat(conv.data.everything.start, "HH:MM")} to ${dateformat(conv.data.everything.end, "HH:MM")}. With just you, is this right?`);
+    }
+
 });
 
 
