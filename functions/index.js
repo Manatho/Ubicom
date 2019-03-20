@@ -14,7 +14,7 @@ app.intent("Book", (conv, { Room_Number }) => {
 
 app.intent("BookTime", (conv, data) => {
     conv.data.date = data.date;
-    conv.data.timeperiod = data.timeperiod;
+    conv.data.timeperiod = data['time-period'];
     let date =  new Date(data.date);
     let start = new Date(data['time-period'].startTime)
     let end = new Date(data['time-period'].endTime)
@@ -34,8 +34,13 @@ app.intent("Attendees", (conv, data) => {
 
     if(conv.data.room == null) {
         conv.ask(response + "Which room would you like to book?")
+    } else if(conv.data.date == null) {
+        conv.ask(response + "What period would you like to book?")
     } else {
-        conv.ask(response + "Which room would you like to book?")
+        let date =  new Date(conv.data.date);
+        let start = new Date(conv.data.timeperiod.startTime)
+        let end = new Date(conv.data.timeperiod.endTime)
+        conv.ask(`Booking the following: ${conv.data.room}, ${dateformat(date, "dd/mm")} from ${dateformat(start, "HH:MM")} to ${dateformat(end, "HH:MM")}. Together with ${conv.data.attendees} is this right?`)
     }
 })
 
