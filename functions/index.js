@@ -3,6 +3,7 @@ const functions = require("firebase-functions");
 const app = dialogflow({ debug: true });
 const dateformat = require("dateformat");
 
+
 app.intent("roomBooking", (conv, data) => {
     let date =  new Date(data.date);
     let start = new Date(data.timePeriod.startTime);
@@ -41,13 +42,15 @@ app.intent("roomBooking - no", (conv, data) => {
     if(data.fullName.length > 0){
         conv.data.everything.names =  data.fullName;
     }
-    if(data.edits.length > 0){
+    if(data.edits != null && data.edits.length > 0){
         data.edits.forEach(edit => {
             let names = edit["full-name"];
+            if(!Array.isArray(names)) names = [names];
+
             if(edit.operator.toLowerCase() == "remove"){
-                conv.data.everything.names.filter(y => !x.includes(y));
-            } else if(edits.operator.toLowerCase() == "add"){
-                conv.data.everything.names.push(...x);
+                conv.data.everything.names = conv.data.everything.names.filter(name => !names.includes(name));
+            } else if(edit.operator.toLowerCase() == "add"){
+                conv.data.everything.names.push(...names);
             }
         })
     }
