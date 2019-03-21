@@ -1,8 +1,10 @@
 const { dialogflow, Permission, Suggestions, BasicCard } = require("actions-on-google");
+const OfflineBookingAPI = require('./api/OfflineBookingAPI')
 const functions = require("firebase-functions");
 const app = dialogflow({ debug: true });
 const dateformat = require("dateformat");
 const _ = require("lodash");
+const api = new OfflineBookingAPI();
 
 app.intent("roomBooking", (conv, data) => {
 	let date = new Date(data.date);
@@ -18,20 +20,31 @@ app.intent("roomBooking", (conv, data) => {
 		start: start,
 		end: end,
 		names: data.fullName,
-		room: data.roomNumber
+		room: data.roomNumber.toUpperCase()
 	};
 
+		
 	conv.ask(
-		`Ok, I have booked room ${data.roomNumber}, the ${dateformat(date, "dd/mmm")} from ${dateformat(start, "HH:MM")} to ${dateformat(
+		`Ok, so you would like to book ${data.roomNumber}, on the ${dateformat(date, "dS' of 'mmmm")} from ${dateformat(start, "HH:MM")} to ${dateformat(
 			end,
 			"HH:MM"
 		)} together with ${names} is this right?`
 	);
+
 });
 
 app.intent("roomBooking - yes", (conv, data) => {
-	conv.close("Cool beans");
+	let {room, start, end} = conv.data.everything
+	let namesArray = conv.data.everything.names.map(fn => `${fn['given-name']} ${fn['last-name']}`)
+
+	return api.bookRoom(room, start, end, namesArray).then(() => {
+      	conv.close(`Okay, I have booked room ${room}, for you on the ${dateformat(start, "dS' of 'mmmm")}`);
+	}).catch((err) => {
+		console.log("err", err);
+		 conv.close(`${err}\nPlease try again with a different room or timespan.`);
+	})
 });
+
 
 app.intent("roomBooking - no", (conv, data) => {
 	if (data.date != "") {
@@ -74,14 +87,14 @@ app.intent("roomBooking - no", (conv, data) => {
 
 	if (conv.data.everything.names.length > 0) {
 		conv.ask(
-			`Updated it to the following: ${conv.data.everything.room}, ${dateformat(conv.data.everything.date, "dd/mmm")} from ${dateformat(
+			`Updated it to the following: ${conv.data.everything.room}, ${dateformat(conv.data.everything.date, "dS' of 'mmmm")} from ${dateformat(
 				conv.data.everything.start,
 				"HH:MM"
 			)} to ${dateformat(conv.data.everything.end, "HH:MM")}. Together with ${names} is this right?`
 		);
 	} else {
 		conv.ask(
-			`Updated it to the following: ${conv.data.everything.room}, ${dateformat(conv.data.everything.date, "dd/mmm")} from ${dateformat(
+			`Updated it to the following: ${conv.data.everything.room}, ${dateformat(conv.data.everything.date, "dS' of 'mmmm")} from ${dateformat(
 				conv.data.everything.start,
 				"HH:MM"
 			)} to ${dateformat(conv.data.everything.end, "HH:MM")}. With just you, is this right?`

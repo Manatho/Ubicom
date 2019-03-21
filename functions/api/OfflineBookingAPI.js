@@ -37,13 +37,12 @@ class BookingAPI {
 
     if (!fs.existsSync(this.dbFile)) {
       this._saveDatabase();
+      this.bookRoom("Room Full of Fears", new Date(), new Date(), "Reaper")
+        .then(() => console.log("succes"))
+        .catch(err => console.log(err));
     } else {
       this._loadDatabase();
     }
-
-    this.bookRoom("Room Full of Fears", new Date(), new Date(), "Reaper")
-      .then(() => console.log("succes"))
-      .catch(err => console.log(err));
   }
 
   _loadDatabase() {
@@ -51,7 +50,7 @@ class BookingAPI {
   }
 
   _saveDatabase() {
-    fs.writeFileSync(this.dbFile, JSON.stringify(this.rooms));
+    fs.writeFileSync(this.dbFile, JSON.stringify(this.rooms, null, 2));
   }
 
   rooms() {
@@ -69,14 +68,13 @@ class BookingAPI {
       room.bookings.forEach(booking => {
         if (
           !(
-            (start < booking.start && end < booking.end) ||
-            (start > booking.start && end > booking.end)
+            (start < booking.start && end < booking.start) ||
+            (start > booking.end && end > booking.end)
           )
         ) {
-          booked = true;
+          return true;
         }
       });
-      return booked;
     }
     return false;
   }
@@ -92,8 +90,9 @@ class BookingAPI {
         );
       }
 
-      this.rooms[roomCode].bookings.push({ start, end, names });
+      this.rooms[roomCode].bookings.push({ start, end, names:names });
       this._saveDatabase();
+      return resolve();
     });
   }
 }
